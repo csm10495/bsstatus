@@ -29,6 +29,9 @@ documentation  = "https://csm10495.github.io/bsstatus"
 file = "README.md"
 content-type = "text/markdown"
 
+[project.scripts]
+bsstatus = "bsstatus.__main__:main"
+
 [tool.setuptools]
 packages = ["bsstatus"]
 include-package-data = true
