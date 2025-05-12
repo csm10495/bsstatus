@@ -1,3 +1,3 @@
-# [PROJECT]
+# bsstatus
 
-A repo for [PROJECT]
+A repo for bsstatus

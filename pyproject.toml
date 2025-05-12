@@ -1,8 +1,8 @@
 [project]
-name = "[PROJECT]"
-description = "A project for [PROJECT]"
+name = "bsstatus"
+description = "A project for bsstatus"
 dynamic = ["version"]
-authors = [{name = "[USER]", email = "[EMAIL]"}]
+authors = [{name = "csm10495", email = "csm10495@gmail.com"}]
 license = {text = "MIT License"}
 classifiers = [
     "Intended Audience :: Developers",
@@ -21,20 +21,20 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://github.com/[USER]/[PROJECT]"
-repository = "https://github.com/[USER]/[PROJECT]"
-documentation  = "https://[USER].github.io/[PROJECT]"
+homepage = "https://github.com/csm10495/bsstatus"
+repository = "https://github.com/csm10495/bsstatus"
+documentation  = "https://csm10495.github.io/bsstatus"
 
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
 
 [tool.setuptools]
-packages = ["[PROJECT]"]
+packages = ["bsstatus"]
 include-package-data = true
 
 [tool.setuptools.dynamic]
-version = {attr = "[PROJECT].__version__"}
+version = {attr = "bsstatus.__version__"}
 
 [tool.pytest.ini_options]
 pythonpath = [
