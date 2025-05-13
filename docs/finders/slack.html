@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.6">
-<title>bsstatus.finders.base API documentation</title>
-<meta name="description" content="Home to the base StatusFinder implementation …">
+<title>bsstatus.finders.slack API documentation</title>
+<meta name="description" content="Home to the Slack StatusFinder implementation.">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -33,12 +33,10 @@ el.replaceWith(d);
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>bsstatus.finders.base</code></h1>
+<h1 class="title">Module <code>bsstatus.finders.slack</code></h1>
 </header>
 <section id="section-intro">
-<p>Home to the base StatusFinder implementation.</p>
-<p>StatusFinders should only get the configs for themselves. They shouldn't
-need the configs of other finders or from the main config either.</p>
+<p>Home to the Slack StatusFinder implementation.</p>
 </section>
 <section>
 </section>
@@ -49,44 +47,150 @@ need the configs of other finders or from the main config either.</p>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="bsstatus.finders.base.StatusFinder"><code class="flex name class">
-<span>class <span class="ident">StatusFinder</span></span>
-<span>(</span><span>finder_config: <a title="bsstatus.config.FinderConfig" href="../config.html#bsstatus.config.FinderConfig">FinderConfig</a>)</span>
+<dt id="bsstatus.finders.slack.SlackStatusFinder"><code class="flex name class">
+<span>class <span class="ident">SlackStatusFinder</span></span>
+<span>(</span><span>finder_config: <a title="bsstatus.config.SlackConfig" href="../config.html#bsstatus.config.SlackConfig">SlackConfig</a>)</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class StatusFinder:
+<pre><code class="python">class SlackStatusFinder(StatusFinder):
     &#34;&#34;&#34;
-    A StatusFinder is a class that finds the status of a user from a given source.
+    Status finder based off the Slack API.
     &#34;&#34;&#34;
 
-    def __init__(self, finder_config: FinderConfig) -&gt; None:
+    def __init__(self, finder_config: SlackConfig) -&gt; None:
         &#34;&#34;&#34;
-        Initialize the StatusFinder.
+        Initializer. Sets up the Slack client.
+        &#34;&#34;&#34;
+        super().__init__(finder_config)
 
-        Sets .config to the configuration object for this finder.
+        if self.config.token:
+            self._client = WebClient(token=self.config.token)
+        else:
+            self._client = None
+
+        # Compile the regexes to not need to do it on every check.
+        self._busy_regex = re.compile(self.config.busy_regex)
+        self._away_regex = re.compile(self.config.away_regex)
+
+    @ttl_cache(ttl=5)
+    def _get_users_info(self) -&gt; dict[str, Any]:
         &#34;&#34;&#34;
-        self.config = finder_config
+        Call the slack API up to once every 5 seconds to get the user info.
+        &#34;&#34;&#34;
+        return self._client.users_info(user=self.config.user_id).data
+
+    @ttl_cache(ttl=5)
+    def _get_dnd_info(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;
+        Call the slack API up to once every 5 seconds to get the dnd info.
+        &#34;&#34;&#34;
+        return self._client.dnd_info(user=self.config.user_id).data
+
+    @ttl_cache(ttl=5)
+    def _get_presence(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;
+        Call the slack API up to once every 5 seconds to get the presence info.
+        &#34;&#34;&#34;
+        return self._client.users_getPresence(user=self.config.user_id).data
+
+    def _get_combined_status_text(self) -&gt; str:
+        &#34;&#34;&#34;
+        Get the combined status icon + status text from the user info.
+        &#34;&#34;&#34;
+        user_info = self._get_users_info()
+        profile = user_info[&#34;user&#34;][&#34;profile&#34;]
+        status_text = profile.get(&#34;status_text&#34;, &#34;&#34;).strip()
+        status_emoji = profile.get(&#34;status_emoji&#34;, &#34;&#34;).strip()
+        return f&#34;{status_emoji} {status_text}&#34;.strip()
+
+    def _is_in_huddle(self) -&gt; bool:
+        &#34;&#34;&#34;
+        Check if the user is in a huddle.
+        &#34;&#34;&#34;
+        user_info = self._get_users_info()
+        profile = user_info[&#34;user&#34;][&#34;profile&#34;]
+        huddle_state = profile.get(&#34;huddle_state&#34;)
+        return huddle_state is not None and huddle_state != &#34;default_unset&#34;
+
+    def _is_dnd(self) -&gt; bool:
+        &#34;&#34;&#34;
+        Check if the user is in do not disturb mode.
+        &#34;&#34;&#34;
+        dnd_settings = self._get_dnd_info()
+        return dnd_settings[&#34;snooze_enabled&#34;]
+
+    def _is_marked_as_away(self) -&gt; bool:
+        &#34;&#34;&#34;
+        Check if the user is marked as away.
+        &#34;&#34;&#34;
+        presence = self._get_presence()
+        return presence[&#34;presence&#34;] == &#34;away&#34;
+
+    def _is_status_busy(self) -&gt; bool:
+        &#34;&#34;&#34;
+        Check if the user&#39;s status text matches the busy regex.
+        &#34;&#34;&#34;
+        status_text = self._get_combined_status_text()
+        return bool(self._busy_regex.match(status_text))
+
+    def _is_status_away(self) -&gt; bool:
+        &#34;&#34;&#34;
+        Check if the user&#39;s status text matches the away regex.
+        &#34;&#34;&#34;
+        status_text = self._get_combined_status_text()
+        return bool(self._away_regex.match(status_text))
 
     def get_status(self) -&gt; Status:
         &#34;&#34;&#34;
-        Get the current status of the user from the source.
+        Get the current status of the user from Slack.
         &#34;&#34;&#34;
-        raise NotImplementedError(&#34;Subclasses should implement this method.&#34;)</code></pre>
+        if self.config.token and self.config.user_id and self._client:
+            # in a huddle
+            if self._is_in_huddle():
+                log.debug(&#34;User is in a huddle&#34;)
+                return Status.DoNotDisturb
+
+            # marked as dnd
+            if self._is_dnd():
+                log.debug(&#34;User is in do not disturb mode&#34;)
+                return Status.DoNotDisturb
+
+            # message says busy
+            if self._is_status_busy():
+                log.debug(&#34;User is busy according to status text&#34;)
+                return Status.Busy
+
+            # message says away
+            if self._is_status_away():
+                log.debug(&#34;User is away according to status text&#34;)
+                return Status.Away
+
+            # check presence
+            if self._is_marked_as_away():
+                log.debug(&#34;User is away according to presence&#34;)
+                return Status.Away
+
+            # We did all our checks.. must be available
+            log.debug(&#34;User is available&#34;)
+            return Status.Available
+
+        # no idea?
+        log.debug(&#34;No idea what the status is&#34;)
+        return Status.Unknown</code></pre>
 </details>
-<div class="desc"><p>A StatusFinder is a class that finds the status of a user from a given source.</p>
-<p>Initialize the StatusFinder.</p>
-<p>Sets .config to the configuration object for this finder.</p></div>
-<h3>Subclasses</h3>
+<div class="desc"><p>Status finder based off the Slack API.</p>
+<p>Initializer. Sets up the Slack client.</p></div>
+<h3>Ancestors</h3>
 <ul class="hlist">
-<li><a title="bsstatus.finders.slack.SlackStatusFinder" href="slack.html#bsstatus.finders.slack.SlackStatusFinder">SlackStatusFinder</a></li>
+<li><a title="bsstatus.finders.base.StatusFinder" href="base.html#bsstatus.finders.base.StatusFinder">StatusFinder</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="bsstatus.finders.base.StatusFinder.get_status"><code class="name flex">
+<dt id="bsstatus.finders.slack.SlackStatusFinder.get_status"><code class="name flex">
 <span>def <span class="ident">get_status</span></span>(<span>self) ‑> <a title="bsstatus.status.Status" href="../status.html#bsstatus.status.Status">Status</a></span>
 </code></dt>
 <dd>
@@ -96,11 +200,43 @@ need the configs of other finders or from the main config either.</p>
 </summary>
 <pre><code class="python">def get_status(self) -&gt; Status:
     &#34;&#34;&#34;
-    Get the current status of the user from the source.
+    Get the current status of the user from Slack.
     &#34;&#34;&#34;
-    raise NotImplementedError(&#34;Subclasses should implement this method.&#34;)</code></pre>
+    if self.config.token and self.config.user_id and self._client:
+        # in a huddle
+        if self._is_in_huddle():
+            log.debug(&#34;User is in a huddle&#34;)
+            return Status.DoNotDisturb
+
+        # marked as dnd
+        if self._is_dnd():
+            log.debug(&#34;User is in do not disturb mode&#34;)
+            return Status.DoNotDisturb
+
+        # message says busy
+        if self._is_status_busy():
+            log.debug(&#34;User is busy according to status text&#34;)
+            return Status.Busy
+
+        # message says away
+        if self._is_status_away():
+            log.debug(&#34;User is away according to status text&#34;)
+            return Status.Away
+
+        # check presence
+        if self._is_marked_as_away():
+            log.debug(&#34;User is away according to presence&#34;)
+            return Status.Away
+
+        # We did all our checks.. must be available
+        log.debug(&#34;User is available&#34;)
+        return Status.Available
+
+    # no idea?
+    log.debug(&#34;No idea what the status is&#34;)
+    return Status.Unknown</code></pre>
 </details>
-<div class="desc"><p>Get the current status of the user from the source.</p></div>
+<div class="desc"><p>Get the current status of the user from Slack.</p></div>
 </dd>
 </dl>
 </dd>
@@ -120,9 +256,9 @@ need the configs of other finders or from the main config either.</p>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="bsstatus.finders.base.StatusFinder" href="#bsstatus.finders.base.StatusFinder">StatusFinder</a></code></h4>
+<h4><code><a title="bsstatus.finders.slack.SlackStatusFinder" href="#bsstatus.finders.slack.SlackStatusFinder">SlackStatusFinder</a></code></h4>
 <ul class="">
-<li><code><a title="bsstatus.finders.base.StatusFinder.get_status" href="#bsstatus.finders.base.StatusFinder.get_status">get_status</a></code></li>
+<li><code><a title="bsstatus.finders.slack.SlackStatusFinder.get_status" href="#bsstatus.finders.slack.SlackStatusFinder.get_status">get_status</a></code></li>
 </ul>
 </li>
 </ul>

@@ -208,6 +208,28 @@ validated to form a valid model.</p>
 </dd>
 </dl>
 </dd>
+<dt id="bsstatus.config.FinderConfig"><code class="flex name class">
+<span>class <span class="ident">FinderConfig</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FinderConfig:
+    &#34;&#34;&#34;
+    Base class for all finder configurations.
+    &#34;&#34;&#34;
+
+    pass</code></pre>
+</details>
+<div class="desc"><p>Base class for all finder configurations.</p></div>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="bsstatus.config.ICalConfig" href="#bsstatus.config.ICalConfig">ICalConfig</a></li>
+<li><a title="bsstatus.config.SlackConfig" href="#bsstatus.config.SlackConfig">SlackConfig</a></li>
+</ul>
+</dd>
 <dt id="bsstatus.config.ICalConfig"><code class="flex name class">
 <span>class <span class="ident">ICalConfig</span></span>
 <span>(</span><span>**data: Any)</span>
@@ -217,7 +239,7 @@ validated to form a valid model.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class ICalConfig(BaseModel):
+<pre><code class="python">class ICalConfig(BaseModel, FinderConfig):
     &#34;&#34;&#34;
     Holds configurations for working with an iCal.
     &#34;&#34;&#34;
@@ -237,6 +259,7 @@ validated to form a valid model.</p>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>pydantic.main.BaseModel</li>
+<li><a title="bsstatus.config.FinderConfig" href="#bsstatus.config.FinderConfig">FinderConfig</a></li>
 </ul>
 <h3>Class variables</h3>
 <dl>
@@ -263,7 +286,7 @@ validated to form a valid model.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class SlackConfig(BaseModel):
+<pre><code class="python">class SlackConfig(BaseModel, FinderConfig):
     &#34;&#34;&#34;
     Holds configurations for working with Slack.
     &#34;&#34;&#34;
@@ -289,6 +312,7 @@ validated to form a valid model.</p>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>pydantic.main.BaseModel</li>
+<li><a title="bsstatus.config.FinderConfig" href="#bsstatus.config.FinderConfig">FinderConfig</a></li>
 </ul>
 <h3>Class variables</h3>
 <dl>
@@ -354,6 +378,9 @@ validated to form a valid model.</p>
 <li><code><a title="bsstatus.config.Config.pause_time" href="#bsstatus.config.Config.pause_time">pause_time</a></code></li>
 <li><code><a title="bsstatus.config.Config.slacks" href="#bsstatus.config.Config.slacks">slacks</a></code></li>
 </ul>
+</li>
+<li>
+<h4><code><a title="bsstatus.config.FinderConfig" href="#bsstatus.config.FinderConfig">FinderConfig</a></code></h4>
 </li>
 <li>
 <h4><code><a title="bsstatus.config.ICalConfig" href="#bsstatus.config.ICalConfig">ICalConfig</a></code></h4>
