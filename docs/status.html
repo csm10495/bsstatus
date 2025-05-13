@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.6">
-<title>bsstatus API documentation</title>
-<meta name="description" content="">
+<title>bsstatus.status API documentation</title>
+<meta name="description" content="Home to the Status class.">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -33,32 +33,89 @@ el.replaceWith(d);
 <main>
 <article id="content">
 <header>
-<h1 class="title">Package <code>bsstatus</code></h1>
+<h1 class="title">Module <code>bsstatus.status</code></h1>
 </header>
 <section id="section-intro">
+<p>Home to the Status class.</p>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt><code class="name"><a title="bsstatus.config" href="config.html">bsstatus.config</a></code></dt>
+<dt id="bsstatus.status.Status"><code class="flex name class">
+<span>class <span class="ident">Status</span></span>
+<span>(</span><span>*args, **kwds)</span>
+</code></dt>
 <dd>
-<div class="desc"><p>Configuration interface for bsstatus …</p></div>
-</dd>
-<dt><code class="name"><a title="bsstatus.finders" href="finders/index.html">bsstatus.finders</a></code></dt>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Status(IntEnum):
+    &#34;&#34;&#34;
+    Enum representing different status states.
+
+    Order here is important. The order of the states is used to determine
+    the precedence of the state. The state with the highest value (latest in the listing)
+    that is found from any status finder will be used.
+    &#34;&#34;&#34;
+
+    # No idea
+    Unknown = auto()
+
+    # The user is available
+    Available = auto()
+
+    # The user is away
+    Away = auto()
+
+    # The user is busy
+    Busy = auto()
+
+    # The user should not be disturbed
+    DoNotDisturb = auto()</code></pre>
+</details>
+<div class="desc"><p>Enum representing different status states.</p>
+<p>Order here is important. The order of the states is used to determine
+the precedence of the state. The state with the highest value (latest in the listing)
+that is found from any status finder will be used.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.IntEnum</li>
+<li>builtins.int</li>
+<li>enum.ReprEnum</li>
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="bsstatus.status.Status.Available"><code class="name">var <span class="ident">Available</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt><code class="name"><a title="bsstatus.status" href="status.html">bsstatus.status</a></code></dt>
+<dt id="bsstatus.status.Status.Away"><code class="name">var <span class="ident">Away</span></code></dt>
 <dd>
-<div class="desc"><p>Home to the Status class.</p></div>
+<div class="desc"></div>
+</dd>
+<dt id="bsstatus.status.Status.Busy"><code class="name">var <span class="ident">Busy</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="bsstatus.status.Status.DoNotDisturb"><code class="name">var <span class="ident">DoNotDisturb</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="bsstatus.status.Status.Unknown"><code class="name">var <span class="ident">Unknown</span></code></dt>
+<dd>
+<div class="desc"></div>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
-</section>
-<section>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -66,11 +123,23 @@ el.replaceWith(d);
 <ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="bsstatus.config" href="config.html">bsstatus.config</a></code></li>
-<li><code><a title="bsstatus.finders" href="finders/index.html">bsstatus.finders</a></code></li>
-<li><code><a title="bsstatus.status" href="status.html">bsstatus.status</a></code></li>
+<li><code><a title="bsstatus" href="index.html">bsstatus</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="bsstatus.status.Status" href="#bsstatus.status.Status">Status</a></code></h4>
+<ul class="">
+<li><code><a title="bsstatus.status.Status.Available" href="#bsstatus.status.Status.Available">Available</a></code></li>
+<li><code><a title="bsstatus.status.Status.Away" href="#bsstatus.status.Status.Away">Away</a></code></li>
+<li><code><a title="bsstatus.status.Status.Busy" href="#bsstatus.status.Status.Busy">Busy</a></code></li>
+<li><code><a title="bsstatus.status.Status.DoNotDisturb" href="#bsstatus.status.Status.DoNotDisturb">DoNotDisturb</a></code></li>
+<li><code><a title="bsstatus.status.Status.Unknown" href="#bsstatus.status.Status.Unknown">Unknown</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
