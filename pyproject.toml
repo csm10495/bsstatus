@@ -3,7 +3,7 @@ name = "bsstatus"
 description = "A project for bsstatus"
 dynamic = ["version"]
 authors = [{name = "csm10495", email = "csm10495@gmail.com"}]
-license = {text = "MIT License"}
+license = "MIT"
 classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
