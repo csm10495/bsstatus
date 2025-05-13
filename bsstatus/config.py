@@ -15,7 +15,15 @@ from pydantic import BaseModel, ConfigDict
 log = logging.getLogger(__name__)
 
 
-class SlackConfig(BaseModel):
+class FinderConfig:
+    """
+    Base class for all finder configurations.
+    """
+
+    pass
+
+
+class SlackConfig(BaseModel, FinderConfig):
     """
     Holds configurations for working with Slack.
     """
@@ -34,7 +42,7 @@ class SlackConfig(BaseModel):
     away_regex: str = ".*(afk|brb|be right back|lunch|walking).*"
 
 
-class ICalConfig(BaseModel):
+class ICalConfig(BaseModel, FinderConfig):
     """
     Holds configurations for working with an iCal.
     """

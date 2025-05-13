@@ -14,8 +14,10 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
+    'cachetools',
+    'platformdirs',
     'pydantic>2',
-    'platformdirs'
+    "slack_sdk",
 ]
 
 [project.optional-dependencies]
