@@ -13,7 +13,10 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+    'pydantic>2',
+    'platformdirs'
+]
 
 [project.optional-dependencies]
 dev = [
