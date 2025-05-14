@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.6">
-<title>bsstatus.finders API documentation</title>
-<meta name="description" content="">
+<title>bsstatus.finders.ical API documentation</title>
+<meta name="description" content="Home to the ICalStatusFinder StatusFinder implementation.">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -33,32 +33,158 @@ el.replaceWith(d);
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>bsstatus.finders</code></h1>
+<h1 class="title">Module <code>bsstatus.finders.ical</code></h1>
 </header>
 <section id="section-intro">
+<p>Home to the ICalStatusFinder StatusFinder implementation.</p>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt><code class="name"><a title="bsstatus.finders.base" href="base.html">bsstatus.finders.base</a></code></dt>
+<dt id="bsstatus.finders.ical.ICalStatusFinder"><code class="flex name class">
+<span>class <span class="ident">ICalStatusFinder</span></span>
+<span>(</span><span>finder_config: <a title="bsstatus.config.ICalConfig" href="../config.html#bsstatus.config.ICalConfig">ICalConfig</a>)</span>
+</code></dt>
 <dd>
-<div class="desc"><p>Home to the base StatusFinder implementation …</p></div>
-</dd>
-<dt><code class="name"><a title="bsstatus.finders.ical" href="ical.html">bsstatus.finders.ical</a></code></dt>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ICalStatusFinder(StatusFinder):
+    &#34;&#34;&#34;
+    Status finder based off an event on a calendar.
+    &#34;&#34;&#34;
+
+    def __init__(self, finder_config: ICalConfig):
+        &#34;&#34;&#34;
+        Initializer. Caches the timezone ZoneInfo based off the config.
+        &#34;&#34;&#34;
+        super().__init__(finder_config)
+
+    @ttl_cache(ttl=300)
+    def _get_calendar(self) -&gt; Calendar:
+        &#34;&#34;&#34;
+        Fetches the calendar from the configured url and returns a Calendar object.
+
+        This method caches the result for 5 minutes to avoid re-downloading the calendar too much.
+        &#34;&#34;&#34;
+        if self.config.url:
+            result = requests.get(self.config.url)
+            result.raise_for_status()
+
+            return Calendar.from_ical(result.text)
+
+        return Calendar()
+
+    def _get_event_name(self, event: Event) -&gt; str | None:
+        &#34;&#34;&#34;
+        Returns the name of the event via the SUMMARY key.
+
+        Generally only used for debugging purposes.
+        &#34;&#34;&#34;
+        if &#34;SUMMARY&#34; in event:
+            return str(event[&#34;SUMMARY&#34;])
+
+    def _should_ignore_event(self, event: Event) -&gt; bool:
+        &#34;&#34;&#34;
+        Checks if the event should be ignored based on the config.
+        &#34;&#34;&#34;
+        # Check if the event matches any of the ignore rules.
+        for dict_of_rules in self.config.ignore_events_matching_any_of_all:
+            if all(key in event and str(event[key]) == str(value) for key, value in dict_of_rules.items()):
+                log.debug(f&#34;Ignoring event {self._get_event_name(event)!r} due to ignore rule.&#34;)
+                return True
+
+        return False
+
+    def _get_now(self) -&gt; datetime:
+        &#34;&#34;&#34;
+        Returns the current time in the local timezone.
+        &#34;&#34;&#34;
+        return datetime.now(get_localzone())
+
+    def _get_events_going_on_now(self) -&gt; list[Event]:
+        &#34;&#34;&#34;
+        Iterates through the events in the calendar and returns a list of events that are happening now,
+        but aren&#39;t ignored by the ignore rules.
+        &#34;&#34;&#34;
+        now = self._get_now()
+
+        events = []
+        for e in recurring_ical_events.of(self._get_calendar()).between(now, now):
+            if self._should_ignore_event(e):
+                continue
+
+            events.append(e)
+            log.debug(f&#34;Current event: {self._get_event_name(e)!r}&#34;)
+
+        return events
+
+    def _in_event_now(self) -&gt; bool:
+        &#34;&#34;&#34;
+        Checks if the user is in a event (according to their calendar) right now.
+        &#34;&#34;&#34;
+        return bool(self._get_events_going_on_now())
+
+    def get_status(self) -&gt; Status:
+        &#34;&#34;&#34;
+        Get the current status of the user from the iCal URL.
+        &#34;&#34;&#34;
+        if self.config.url:
+            if self._in_event_now():
+                log.debug(&#34;According to our calendar, we&#39;re in a event.&#34;)
+                return Status.Busy
+
+            log.debug(&#34;According to our calendar, we&#39;re not in a event.&#34;)
+            return Status.Available
+
+        # No ical url was given.. we have no idea.
+        log.debug(&#34;No idea what the status is since no ical url was given.&#34;)
+        return Status.Unknown</code></pre>
+</details>
+<div class="desc"><p>Status finder based off an event on a calendar.</p>
+<p>Initializer. Caches the timezone ZoneInfo based off the config.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="bsstatus.finders.base.StatusFinder" href="base.html#bsstatus.finders.base.StatusFinder">StatusFinder</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="bsstatus.finders.ical.ICalStatusFinder.get_status"><code class="name flex">
+<span>def <span class="ident">get_status</span></span>(<span>self) ‑> <a title="bsstatus.status.Status" href="../status.html#bsstatus.status.Status">Status</a></span>
+</code></dt>
 <dd>
-<div class="desc"><p>Home to the ICalStatusFinder StatusFinder implementation.</p></div>
-</dd>
-<dt><code class="name"><a title="bsstatus.finders.slack" href="slack.html">bsstatus.finders.slack</a></code></dt>
-<dd>
-<div class="desc"><p>Home to the Slack StatusFinder implementation.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_status(self) -&gt; Status:
+    &#34;&#34;&#34;
+    Get the current status of the user from the iCal URL.
+    &#34;&#34;&#34;
+    if self.config.url:
+        if self._in_event_now():
+            log.debug(&#34;According to our calendar, we&#39;re in a event.&#34;)
+            return Status.Busy
+
+        log.debug(&#34;According to our calendar, we&#39;re not in a event.&#34;)
+        return Status.Available
+
+    # No ical url was given.. we have no idea.
+    log.debug(&#34;No idea what the status is since no ical url was given.&#34;)
+    return Status.Unknown</code></pre>
+</details>
+<div class="desc"><p>Get the current status of the user from the iCal URL.</p></div>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
-</section>
-<section>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -68,14 +194,17 @@ el.replaceWith(d);
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="bsstatus" href="../index.html">bsstatus</a></code></li>
+<li><code><a title="bsstatus.finders" href="index.html">bsstatus.finders</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
-<li><code><a title="bsstatus.finders.base" href="base.html">bsstatus.finders.base</a></code></li>
-<li><code><a title="bsstatus.finders.ical" href="ical.html">bsstatus.finders.ical</a></code></li>
-<li><code><a title="bsstatus.finders.slack" href="slack.html">bsstatus.finders.slack</a></code></li>
+<li>
+<h4><code><a title="bsstatus.finders.ical.ICalStatusFinder" href="#bsstatus.finders.ical.ICalStatusFinder">ICalStatusFinder</a></code></h4>
+<ul class="">
+<li><code><a title="bsstatus.finders.ical.ICalStatusFinder.get_status" href="#bsstatus.finders.ical.ICalStatusFinder.get_status">get_status</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
