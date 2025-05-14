@@ -50,9 +50,44 @@ class ICalConfig(BaseModel, FinderConfig):
     # The URL of the iCal to monitor.
     url: str | None = None
 
-    # The timezone to assume for the ical (if not otherwise determined).
-    # Example: 'America/Los_Angeles'
-    assumed_timezone: str | None = None
+    """
+    This is a list of dict from key to value.
+    Each item in the list is a listing of key-value pairs that
+    if all in the dict match an event, it will be ignored even if
+    it matches up for the current time.
+    For example, if i want to ignore events that have a iCal key of
+    X-MICROSOFT-CDO-BUSYSTATUS with value of TENTATIVE
+    ignore_events_matching_any_of_all = [
+        {
+            "X-MICROSOFT-CDO-BUSYSTATUS": "TENTATIVE"
+        }
+    ]
+
+    If I want to ignore events that have an iCal key of
+    X-MICROSOFT-CDO-BUSYSTATUS with value of TENTATIVE
+    AND another key of X-MICROSOFT-CDO-ALLDAYEVENT with value of TRUE
+    ignore_events_matching_any_of_all = [
+        {
+            "X-MICROSOFT-CDO-BUSYSTATUS": "TENTATIVE",
+            "X-MICROSOFT-CDO-ALLDAYEVENT": "TRUE"
+        }
+    ]
+
+    In other words each dict is OR'd while the items in the dict are AND'd.
+    """
+    ignore_events_matching_any_of_all: list[dict[str, str]] = [
+        # By default ignore events that according to Outlook we respond to as 'tentative'
+        # or just didn't respond at all.
+        {
+            "X-MICROSOFT-CDO-BUSYSTATUS": "TENTATIVE",
+        },
+        # Also ignore events that lead to a busy status of 'free'
+        {
+            "X-MICROSOFT-CDO-BUSYSTATUS": "FREE",
+        },
+        # Also ignore events that are marked by Outlook as all-day events.
+        {"X-MICROSOFT-CDO-ALLDAYEVENT": "TRUE"},
+    ]
 
 
 class BlinkstickConfig(BaseModel):

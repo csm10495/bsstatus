@@ -14,10 +14,14 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    'cachetools',
-    'platformdirs',
-    'pydantic>2',
+    "cachetools",
+    "icalendar",
+    "platformdirs",
+    "pydantic>2",
+    "recurring-ical-events",
+    "requests",
     "slack_sdk",
+    "tzlocal>=4"
 ]
 
 [project.optional-dependencies]
